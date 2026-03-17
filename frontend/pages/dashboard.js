@@ -9,6 +9,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ total_bots: 0, active_bots: 0, total_messages: 0, total_documents: 0 });
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ bot_name: '', client_name: '', greeting_message: '', primary_color: '#0066cc' });
 
   useEffect(() => {
@@ -46,6 +48,8 @@ export default function Dashboard() {
 
   const createBot = async (e) => {
     e.preventDefault();
+    setCreating(true);
+    setError('');
     const token = localStorage.getItem('token');
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/bots`, form, {
@@ -56,7 +60,9 @@ export default function Dashboard() {
       fetchBots(token);
       fetchStats(token);
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.error || 'Failed to create bot');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -71,7 +77,7 @@ export default function Dashboard() {
       fetchBots(token);
       fetchStats(token);
     } catch (err) {
-      console.error(err);
+      alert(err.response?.data?.error || 'Failed to delete bot');
     }
   };
 
@@ -125,6 +131,7 @@ export default function Dashboard() {
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-800">
               <h3 className="text-lg font-semibold mb-4">Create New Bot</h3>
+              {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg p-3 mb-4 text-sm">{error}</div>}
               <form onSubmit={createBot} className="space-y-4">
                 <div>
                   <label className="text-gray-400 text-sm mb-1 block">Bot Name</label>
@@ -143,8 +150,10 @@ export default function Dashboard() {
                   <input type="color" value={form.primary_color} onChange={e => setForm({...form, primary_color: e.target.value})} className="w-full h-12 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer" />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowCreate(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg">Cancel</button>
-                  <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium">Create Bot</button>
+                  <button type="button" onClick={() => { setShowCreate(false); setError(''); }} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg">Cancel</button>
+                  <button type="submit" disabled={creating} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium disabled:opacity-50">
+                    {creating ? 'Creating...' : 'Create Bot'}
+                  </button>
                 </div>
               </form>
             </div>

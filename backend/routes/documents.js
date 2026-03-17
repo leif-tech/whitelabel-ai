@@ -71,6 +71,7 @@ router.post("/:botId/text", auth, verifyBotOwnership, async (req, res) => {
     const supabase = getSupabase();
     const { content, file_name } = req.body;
     if (!content) return res.status(400).json({ error: "Content required" });
+    if (content.length > 500000) return res.status(400).json({ error: "Content too large. Max 500KB of text." });
     const { error } = await supabase.from("documents").insert([{
       bot_id: req.params.botId,
       file_name: file_name || "Manual Text Entry",
@@ -94,7 +95,8 @@ router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
     const { data } = await axios.get(url, { timeout: 10000 });
     const $ = cheerio.load(data);
     $("script, style, nav, footer, header").remove();
-    const content = $("body").text().replace(/\s+/g, " ").trim();
+    let content = $("body").text().replace(/\s+/g, " ").trim();
+    if (content.length > 500000) content = content.substring(0, 500000);
     const { error } = await supabase.from("documents").insert([{
       bot_id: req.params.botId,
       file_name: url,

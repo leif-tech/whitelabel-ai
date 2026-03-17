@@ -20,11 +20,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiter on chat endpoint (20 requests per minute per IP)
+// Rate limiters
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
   message: { error: "Too many requests. Please wait a moment." }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: "Too many attempts. Please try again later." }
 });
 
 // Health check
@@ -37,7 +43,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/bots', require('./routes/bots'));
 app.use('/api/chat', chatLimiter, require('./routes/chat'));
 app.use('/api/documents', require('./routes/documents'));

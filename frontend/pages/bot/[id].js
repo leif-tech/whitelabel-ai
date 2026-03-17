@@ -106,6 +106,7 @@ export default function BotPage() {
   const uploadPdf = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showMsg('File too large. Max 10MB.'); return; }
     setUploading(true);
     try {
       const formData = new FormData();
