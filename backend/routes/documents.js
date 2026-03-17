@@ -10,7 +10,7 @@ const auth = require("../middleware/auth");
 const getSupabase = require("../lib/supabase");
 
 const upload = multer({
-  dest: path.join(__dirname, "..", "uploads"),
+  dest: process.env.VERCEL === '1' ? '/tmp' : path.join(__dirname, "..", "uploads"),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") cb(null, true);

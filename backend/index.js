@@ -49,7 +49,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
-app.listen(PORT, () => {
-  console.log(`\nWhiteLabelAI server running on port ${PORT}`);
-  console.log(`   Local: http://localhost:${PORT}\n`);
-});
+// Only listen when running directly (not on Vercel)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`\nWhiteLabelAI server running on port ${PORT}`);
+    console.log(`   Local: http://localhost:${PORT}\n`);
+  });
+}
+
+module.exports = app;
