@@ -63,19 +63,16 @@
   let botName = 'Assistant';
   let primaryColor = '#0066cc';
 
-  // Load bot info
-  fetch(`${apiUrl}/api/chat/${botId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: 'hi', session_id: sessionId + '_init' })
-  }).then(r => r.json()).then(data => {
+  // Load bot info via lightweight GET endpoint (no API call wasted)
+  fetch(`${apiUrl}/api/chat/${botId}/info`)
+    .then(r => r.json()).then(data => {
     botName = data.bot_name || 'Assistant';
     primaryColor = data.primary_color || '#0066cc';
     document.getElementById('wlai-header-name').textContent = botName;
     document.getElementById('wlai-header').style.background = primaryColor;
     document.getElementById('wlai-bubble').style.background = primaryColor;
     document.getElementById('wlai-send').style.background = primaryColor;
-    addMessage(data.reply, 'bot');
+    if (data.greeting_message) addMessage(data.greeting_message, 'bot');
   }).catch(() => {
     document.getElementById('wlai-header-name').textContent = 'Assistant';
   });

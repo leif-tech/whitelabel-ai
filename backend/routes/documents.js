@@ -1,33 +1,47 @@
 const express = require("express");
 const router = express.Router();
-const { createClient } = require("@supabase/supabase-js");
-const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const pdfParse = require("pdf-parse");
 const axios = require("axios");
 const cheerio = require("cheerio");
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
+const auth = require("../middleware/auth");
+const getSupabase = require("../lib/supabase");
 
-const getSupabase = () => createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const upload = multer({
+  dest: path.join(__dirname, "..", "uploads"),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") cb(null, true);
+    else cb(new Error("Only PDF files are allowed"), false);
+  }
+});
 
-const upload = multer({ dest: "uploads/" });
-
-const auth = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "No token provided" });
+// Middleware: verify the bot belongs to this agency
+async function verifyBotOwnership(req, res, next) {
   try {
-    req.agency = jwt.verify(token, process.env.JWT_SECRET);
+    const supabase = getSupabase();
+    const { data: bot } = await supabase.from("bots").select("id").eq("id", req.params.botId).eq("agency_id", req.agency.id).single();
+    if (!bot) return res.status(404).json({ error: "Bot not found or not owned by you" });
     next();
   } catch {
-    res.status(401).json({ error: "Invalid token" });
+    res.status(404).json({ error: "Bot not found" });
   }
-};
+}
 
 // Upload PDF
-router.post("/:botId/upload", auth, upload.single("file"), async (req, res) => {
-  const supabase = getSupabase();
+router.post("/:botId/upload", auth, verifyBotOwnership, (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") return res.status(400).json({ error: "File too large. Max 10MB." });
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
+    const supabase = getSupabase();
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const dataBuffer = fs.readFileSync(req.file.path);
     const pdfData = await pdfParse(dataBuffer);
@@ -40,15 +54,16 @@ router.post("/:botId/upload", auth, upload.single("file"), async (req, res) => {
     if (error) throw error;
     res.json({ message: "PDF uploaded and learned successfully", characters: pdfData.text.length });
   } catch (err) {
+    if (req.file?.path) try { fs.unlinkSync(req.file.path); } catch {}
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
 // Add text directly
-router.post("/:botId/text", auth, async (req, res) => {
-  const supabase = getSupabase();
+router.post("/:botId/text", auth, verifyBotOwnership, async (req, res) => {
   try {
+    const supabase = getSupabase();
     const { content, file_name } = req.body;
     if (!content) return res.status(400).json({ error: "Content required" });
     const { error } = await supabase.from("documents").insert([{
@@ -65,11 +80,12 @@ router.post("/:botId/text", auth, async (req, res) => {
 });
 
 // Scrape URL
-router.post("/:botId/url", auth, async (req, res) => {
-  const supabase = getSupabase();
+router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
   try {
+    const supabase = getSupabase();
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "URL required" });
+    if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "URL must start with http:// or https://" });
     const { data } = await axios.get(url, { timeout: 10000 });
     const $ = cheerio.load(data);
     $("script, style, nav, footer, header").remove();
@@ -88,9 +104,9 @@ router.post("/:botId/url", auth, async (req, res) => {
 });
 
 // Get all documents for a bot
-router.get("/:botId", auth, async (req, res) => {
-  const supabase = getSupabase();
+router.get("/:botId", auth, verifyBotOwnership, async (req, res) => {
   try {
+    const supabase = getSupabase();
     const { data: docs, error } = await supabase.from("documents").select("id, file_name, created_at").eq("bot_id", req.params.botId);
     if (error) throw error;
     res.json({ documents: docs });
@@ -101,9 +117,9 @@ router.get("/:botId", auth, async (req, res) => {
 });
 
 // Delete document
-router.delete("/:botId/:docId", auth, async (req, res) => {
-  const supabase = getSupabase();
+router.delete("/:botId/:docId", auth, verifyBotOwnership, async (req, res) => {
   try {
+    const supabase = getSupabase();
     const { error } = await supabase.from("documents").delete().eq("id", req.params.docId).eq("bot_id", req.params.botId);
     if (error) throw error;
     res.json({ message: "Document deleted" });

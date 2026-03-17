@@ -6,6 +6,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [agency, setAgency] = useState(null);
   const [bots, setBots] = useState([]);
+  const [stats, setStats] = useState({ total_bots: 0, active_bots: 0, total_messages: 0, total_documents: 0 });
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ bot_name: '', client_name: '', greeting_message: '', primary_color: '#0066cc' });
@@ -16,6 +17,7 @@ export default function Dashboard() {
     if (!token) { router.push('/'); return; }
     setAgency(JSON.parse(agencyData));
     fetchBots(token);
+    fetchStats(token);
   }, []);
 
   const fetchBots = async (token) => {
@@ -31,6 +33,17 @@ export default function Dashboard() {
     }
   };
 
+  const fetchStats = async (token) => {
+    try {
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStats(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const createBot = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -41,6 +54,22 @@ export default function Dashboard() {
       setShowCreate(false);
       setForm({ bot_name: '', client_name: '', greeting_message: '', primary_color: '#0066cc' });
       fetchBots(token);
+      fetchStats(token);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteBot = async (e, botId) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this bot? All its documents and conversations will be permanently removed.')) return;
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchBots(token);
+      fetchStats(token);
     } catch (err) {
       console.error(err);
     }
@@ -66,18 +95,22 @@ export default function Dashboard() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div className="text-3xl font-bold">{bots.length}</div>
+            <div className="text-3xl font-bold">{stats.total_bots}</div>
             <div className="text-gray-400 text-sm mt-1">Total Bots</div>
           </div>
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div className="text-3xl font-bold">{bots.filter(b => b.is_active).length}</div>
+            <div className="text-3xl font-bold">{stats.active_bots}</div>
             <div className="text-gray-400 text-sm mt-1">Active Bots</div>
           </div>
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div className="text-3xl font-bold capitalize">{agency?.plan}</div>
-            <div className="text-gray-400 text-sm mt-1">Current Plan</div>
+            <div className="text-3xl font-bold">{stats.total_messages}</div>
+            <div className="text-gray-400 text-sm mt-1">Total Messages</div>
+          </div>
+          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+            <div className="text-3xl font-bold">{stats.total_documents}</div>
+            <div className="text-gray-400 text-sm mt-1">Documents</div>
           </div>
         </div>
 
@@ -130,14 +163,15 @@ export default function Dashboard() {
               <div key={bot.id} onClick={() => router.push(`/bot/${bot.id}`)} className="bg-gray-900 rounded-xl p-5 border border-gray-800 cursor-pointer hover:border-gray-600 transition-all">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{background: bot.primary_color}}>{bot.bot_name[0]}</div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="font-semibold">{bot.bot_name}</div>
                     <div className="text-gray-400 text-sm">{bot.client_name}</div>
                   </div>
+                  <button onClick={(e) => deleteBot(e, bot.id)} className="text-gray-500 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-500/10 transition-all" title="Delete bot">Delete</button>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className={`text-xs px-2 py-1 rounded-full ${bot.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>{bot.is_active ? 'Active' : 'Inactive'}</span>
-                  <span className="text-gray-500 text-xs">→ Manage</span>
+                  <span className="text-gray-500 text-xs">Manage →</span>
                 </div>
               </div>
             ))}
