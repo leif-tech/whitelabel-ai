@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS bots (
   greeting_message TEXT NOT NULL DEFAULT 'Hi! How can I help you today?',
   primary_color TEXT NOT NULL DEFAULT '#000000',
   is_active BOOLEAN NOT NULL DEFAULT true,
+  system_prompt TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -50,3 +51,16 @@ CREATE TABLE IF NOT EXISTS conversations (
 
 CREATE INDEX idx_conversations_bot_id ON conversations(bot_id);
 CREATE INDEX idx_conversations_session ON conversations(bot_id, session_id);
+
+-- Leads table
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  bot_id UUID NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  session_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_leads_bot_id ON leads(bot_id);

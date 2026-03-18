@@ -48,6 +48,8 @@ app.use('/api/bots', require('./routes/bots'));
 app.use('/api/chat', chatLimiter, require('./routes/chat'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/conversations', require('./routes/conversations'));
+app.use('/api/leads', require('./routes/leads'));
 
 // Global error handler
 app.use((err, req, res, next) => {

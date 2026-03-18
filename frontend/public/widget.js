@@ -5,6 +5,7 @@
 
   // Generate session ID
   const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+  let leadCaptured = false;
 
   // Inject styles
   const style = document.createElement('style');
@@ -31,6 +32,15 @@
     #wlai-input::placeholder { color: #666; }
     #wlai-send { background: #0066cc; border: none; border-radius: 8px; padding: 10px 14px; color: white; cursor: pointer; font-size: 14px; }
     #wlai-send:hover { background: #0052a3; }
+    #wlai-lead-form { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+    #wlai-lead-form input { background: #222; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: white; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
+    #wlai-lead-form input::placeholder { color: #666; }
+    #wlai-lead-form input:focus { border-color: #0066cc; }
+    #wlai-lead-form button { background: #0066cc; border: none; border-radius: 8px; padding: 12px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+    #wlai-lead-form button:hover { background: #0052a3; }
+    #wlai-lead-form .wlai-skip { background: none; border: none; color: #666; font-size: 12px; cursor: pointer; padding: 8px; text-align: center; }
+    #wlai-lead-form .wlai-skip:hover { color: #999; }
+    #wlai-lead-form p { color: #999; font-size: 13px; margin: 0 0 4px; text-align: center; }
   `;
   document.head.appendChild(style);
 
@@ -50,8 +60,16 @@
         <div id="wlai-header-sub">AI Assistant</div>
       </div>
     </div>
-    <div id="wlai-messages"></div>
-    <div id="wlai-input-area">
+    <div id="wlai-lead-form">
+      <p>Before we start, tell us a bit about yourself:</p>
+      <input id="wlai-lead-name" placeholder="Your name" />
+      <input id="wlai-lead-email" type="email" placeholder="Email address" />
+      <input id="wlai-lead-phone" type="tel" placeholder="Phone (optional)" />
+      <button id="wlai-lead-submit">Start Chat</button>
+      <button class="wlai-skip" id="wlai-lead-skip">Skip, just chat</button>
+    </div>
+    <div id="wlai-messages" style="display:none;"></div>
+    <div id="wlai-input-area" style="display:none;">
       <input id="wlai-input" placeholder="Type a message..." />
       <button id="wlai-send">Send</button>
     </div>
@@ -60,10 +78,46 @@
 
   const messages = document.getElementById('wlai-messages');
   const input = document.getElementById('wlai-input');
+  const leadForm = document.getElementById('wlai-lead-form');
+  const inputArea = document.getElementById('wlai-input-area');
   let botName = 'Assistant';
   let primaryColor = '#0066cc';
 
-  // Load bot info via lightweight GET endpoint (no API call wasted)
+  function showChat() {
+    leadForm.style.display = 'none';
+    messages.style.display = 'flex';
+    inputArea.style.display = 'flex';
+    leadCaptured = true;
+  }
+
+  // Lead form submit
+  document.getElementById('wlai-lead-submit').addEventListener('click', async () => {
+    const name = document.getElementById('wlai-lead-name').value.trim();
+    const email = document.getElementById('wlai-lead-email').value.trim();
+    const phone = document.getElementById('wlai-lead-phone').value.trim();
+
+    if (!name && !email) {
+      document.getElementById('wlai-lead-name').style.borderColor = '#f44';
+      return;
+    }
+
+    try {
+      await fetch(`${apiUrl}/api/leads/${botId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, session_id: sessionId })
+      });
+    } catch {}
+
+    showChat();
+  });
+
+  // Skip lead form
+  document.getElementById('wlai-lead-skip').addEventListener('click', () => {
+    showChat();
+  });
+
+  // Load bot info
   fetch(`${apiUrl}/api/chat/${botId}/info`)
     .then(r => r.json()).then(data => {
     botName = data.bot_name || 'Assistant';
@@ -72,6 +126,7 @@
     document.getElementById('wlai-header').style.background = primaryColor;
     document.getElementById('wlai-bubble').style.background = primaryColor;
     document.getElementById('wlai-send').style.background = primaryColor;
+    document.getElementById('wlai-lead-submit').style.background = primaryColor;
     if (data.greeting_message) addMessage(data.greeting_message, 'bot');
   }).catch(() => {
     document.getElementById('wlai-header-name').textContent = 'Assistant';
