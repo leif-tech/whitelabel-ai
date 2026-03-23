@@ -13,9 +13,10 @@ app.set('trust proxy', 1);
 // Security
 app.use(helmet());
 
-// CORS
+// CORS — allow any origin so the embeddable widget works on client sites
+// Auth-protected endpoints are secured by JWT, not CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true,
   credentials: true
 }));
 

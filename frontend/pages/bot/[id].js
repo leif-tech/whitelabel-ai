@@ -67,8 +67,7 @@ export default function BotPage() {
         client_name: data.bot.client_name,
         greeting_message: data.bot.greeting_message,
         primary_color: data.bot.primary_color,
-        is_active: data.bot.is_active,
-        system_prompt: data.bot.system_prompt || ''
+        is_active: data.bot.is_active
       });
     } catch (err) {
       console.error(err);
@@ -332,11 +331,6 @@ export default function BotPage() {
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">Greeting Message</label>
                     <input type="text" value={settings.greeting_message || ''} onChange={e => setSettings({ ...settings, greeting_message: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">Custom Instructions</label>
-                    <textarea value={settings.system_prompt || ''} onChange={e => setSettings({ ...settings, system_prompt: e.target.value })} placeholder="e.g. Always recommend booking a call. Never discuss competitor products. Respond in Spanish..." className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 h-24 resize-none text-sm" />
-                    <p className="text-gray-500 text-xs mt-1">Extra instructions the bot will follow in every conversation.</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">

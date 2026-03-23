@@ -1,6 +1,6 @@
 (function() {
   const botId = document.currentScript.getAttribute('data-bot-id');
-  const apiUrl = document.currentScript.getAttribute('data-api-url') || 'http://localhost:3001';
+  const apiUrl = document.currentScript.getAttribute('data-api-url') || 'https://whitelabel-ai-production.up.railway.app';
   if (!botId) return;
 
   // Generate session ID

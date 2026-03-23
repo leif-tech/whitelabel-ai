@@ -17,7 +17,7 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     const agencyData = localStorage.getItem('agency');
     if (!token) { router.push('/'); return; }
-    setAgency(JSON.parse(agencyData));
+    try { setAgency(JSON.parse(agencyData)); } catch { setAgency(null); }
     fetchBots(token);
     fetchStats(token);
   }, []);

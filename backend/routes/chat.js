@@ -39,8 +39,6 @@ router.post("/:botId", async (req, res) => {
     const messages = history?.map(h => ({ role: h.role, content: h.message })) || [];
     messages.push({ role: "user", content: message });
 
-    const customInstructions = bot.system_prompt ? `\n\nADDITIONAL INSTRUCTIONS FROM THE BOT OWNER:\n${bot.system_prompt}` : '';
-
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
@@ -51,7 +49,7 @@ Use ONLY the following knowledge base to answer questions. If the answer is not 
 KNOWLEDGE BASE:
 ${knowledge}
 
-Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}.${customInstructions}`,
+Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}.`,
       messages
     });
 
