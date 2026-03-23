@@ -16,14 +16,13 @@ router.post("/", auth, [
 ], validate, async (req, res) => {
   try {
     const supabase = getSupabase();
-    const { bot_name, client_name, greeting_message, primary_color, system_prompt } = req.body;
+    const { bot_name, client_name, greeting_message, primary_color } = req.body;
     const { data: bot, error } = await supabase.from("bots").insert([{
       agency_id: req.agency.id,
       bot_name,
       client_name,
       greeting_message: greeting_message || "Hi! How can I help you today?",
-      primary_color: primary_color || "#000000",
-      system_prompt: system_prompt || ""
+      primary_color: primary_color || "#000000"
     }]).select().single();
     if (error) throw error;
     res.json({ message: "Bot created successfully", bot });
@@ -63,9 +62,8 @@ router.put("/:id", auth, [
 ], validate, async (req, res) => {
   try {
     const supabase = getSupabase();
-    const { bot_name, client_name, greeting_message, primary_color, is_active, system_prompt } = req.body;
+    const { bot_name, client_name, greeting_message, primary_color, is_active } = req.body;
     const update = { bot_name, client_name, greeting_message, primary_color, is_active };
-    if (system_prompt !== undefined) update.system_prompt = system_prompt;
     const { data: bot, error } = await supabase.from("bots").update(update).eq("id", req.params.id).eq("agency_id", req.agency.id).select().single();
     if (error) throw error;
     res.json({ message: "Bot updated", bot });
