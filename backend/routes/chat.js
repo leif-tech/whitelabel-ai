@@ -5,6 +5,30 @@ const getSupabase = require("../lib/supabase");
 
 const getAnthropic = () => new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Post-process bot replies to guarantee proper line breaks
+function formatReply(text) {
+  // Strip markdown bold/italic that Claude sometimes adds despite instructions
+  text = text.replace(/\*\*/g, '');
+
+  // If already well-formatted with 3+ paragraph breaks, just return
+  if ((text.match(/\n\s*\n/g) || []).length >= 3) return text;
+
+  // Count price patterns (₱ or P followed by digits)
+  const prices = text.match(/[₱P]\d[\d,]+/g) || [];
+  if (prices.length < 3) return text;
+
+  // Common words that follow prices in normal sentences (NOT product names)
+  const skipWords = /^(para|sa|ang|ug|og|kay|kung|pero|lang|ra|na|da|ba|man|pud|pod|sad|hangtod|gikan|each|per|for|and|or|the|is|are|to|in|of|with|from|up|but|not|so|if|at|by|as|on|naa|wala|dili|mao|kini|namo|nila|available|only|also|nga|tag|matag|every|all|this|that|our|your|its|we|you|they|it|has|have|can|will|may|just|more|less|about|around|between|both|which|what|when|how|free|total|price|worth|below|above|under|over|most|best|good|great|cheap|affordable|starting|ranging|range|priced|costs|cost|inclusive|plus|minus|off|discount)$/i;
+
+  // After a price (+ optional punctuation), if next word is a product/brand name, add line break
+  text = text.replace(/([₱P]\d[\d,]+[.,:;]?)\s+(\S+)/g, (match, price, next) => {
+    if (skipWords.test(next)) return match;
+    return price + '\n\n' + next;
+  });
+
+  return text;
+}
+
 // GET bot info (for widget init — no API call wasted)
 router.get("/:botId/info", async (req, res) => {
   try {
@@ -83,7 +107,7 @@ Remember: readability is the top priority. Use blank lines generously to separat
       messages
     });
 
-    const reply = response.content[0].text;
+    const reply = formatReply(response.content[0].text);
 
     await supabase.from("conversations").insert([
       { bot_id: botId, session_id: session_id || "default", role: "user", message },
