@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -36,6 +37,9 @@ const authLimiter = rateLimit({
   max: 10,
   message: { error: "Too many attempts. Please try again later." }
 });
+
+// Serve widget.js and other static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check
 app.get('/', (req, res) => {

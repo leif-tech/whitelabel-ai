@@ -243,7 +243,7 @@ export default function BotPage() {
   };
 
   // --- Embed Code ---
-  const widgetUrl = typeof window !== 'undefined' ? `${window.location.origin}/widget.js` : '/widget.js';
+  const widgetUrl = `${API}/widget.js`;
   const embedCode = `<script src="${widgetUrl}" data-bot-id="${id}" data-api-url="${API}"></script>`;
 
   if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="text-white">Loading...</div></div>;
