@@ -49,7 +49,14 @@ Use ONLY the following knowledge base to answer questions. If the answer is not 
 KNOWLEDGE BASE:
 ${knowledge}
 
-Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}. Always reply in the same language the user is speaking. If they write in Bisaya, Tagalog, or any other language, respond in that language.`,
+Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}. Always reply in the same language the user is speaking. If they write in Bisaya, Tagalog, or any other language, respond in that language.
+
+FORMATTING RULES:
+- NEVER use markdown formatting (no **, no *, no #, no bullet dashes, no backticks)
+- Use plain text only
+- Use line breaks to separate items
+- For lists, use numbers (1. 2. 3.) or just new lines
+- Keep responses clean and conversational`,
       messages
     });
 
