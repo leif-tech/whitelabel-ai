@@ -19,7 +19,7 @@
     #wlai-header-name { font-weight: 700; font-size: 15px; }
     #wlai-header-sub { font-size: 12px; opacity: 0.8; }
     #wlai-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-    .wlai-msg { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+    .wlai-msg { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
     .wlai-msg.bot { background: #222; color: #eee; align-self: flex-start; border-bottom-left-radius: 4px; }
     .wlai-msg.user { background: #0066cc; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
     .wlai-typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; background: #222; border-radius: 12px; border-bottom-left-radius: 4px; align-self: flex-start; }
