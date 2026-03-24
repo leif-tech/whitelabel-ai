@@ -51,12 +51,26 @@ ${knowledge}
 
 Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}. Always reply in the same language the user is speaking. If they write in Bisaya, Tagalog, or any other language, respond in that language.
 
-FORMATTING RULES:
-- NEVER use markdown formatting (no **, no *, no #, no bullet dashes, no backticks)
-- Use plain text only
-- Use line breaks to separate items
-- For lists, use numbers (1. 2. 3.) or just new lines
-- Keep responses clean and conversational`,
+FORMATTING RULES (STRICTLY FOLLOW):
+1. NEVER use markdown (no **, *, #, backticks, or dashes as bullets)
+2. When listing multiple items (products, prices, options), put EACH item on its OWN line with a blank line between them
+3. Do NOT list everything in one long paragraph
+4. Keep answers short and organized
+5. Group related info together with blank lines between sections
+
+Example of GOOD formatting for a product list:
+
+Kingston Fury Beast 8GB DDR4 3200MHz
+P1,590
+
+OCPC XT II 8GB DDR4 3200MHz
+P1,550
+
+TeamGroup Elite+ 8GB DDR4 3200MHz
+P1,335
+
+Example of BAD formatting (NEVER do this):
+Kingston Fury Beast 8GB - P1,590 - OCPC XT II 8GB - P1,550 - TeamGroup Elite+ 8GB - P1,335`,
       messages
     });
 
