@@ -9,6 +9,7 @@ const getPdfParse = () => {
 };
 const axios = require("axios");
 const cheerio = require("cheerio");
+const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const auth = require("../middleware/auth");
@@ -85,18 +86,44 @@ router.post("/:botId/text", auth, verifyBotOwnership, async (req, res) => {
   }
 });
 
-// Scrape URL
+// Scrape URL (Puppeteer for JS-rendered pages, Cheerio fallback)
 router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
   try {
     const supabase = getSupabase();
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "URL required" });
     if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "URL must start with http:// or https://" });
-    const { data } = await axios.get(url, { timeout: 10000 });
-    const $ = cheerio.load(data);
-    $("script, style, nav, footer, header").remove();
-    let content = $("body").text().replace(/\s+/g, " ").trim();
+
+    let content = "";
+
+    try {
+      // Try Puppeteer first (handles JS-rendered SPAs)
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+      });
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+      // Wait a bit for dynamic content to load
+      await new Promise(r => setTimeout(r, 2000));
+      content = await page.evaluate(() => {
+        document.querySelectorAll("script, style, nav, footer, header").forEach(el => el.remove());
+        return document.body.innerText;
+      });
+      await browser.close();
+    } catch (puppeteerErr) {
+      console.log("Puppeteer failed, falling back to Cheerio:", puppeteerErr.message);
+      // Fallback to Cheerio for simple static pages
+      const { data } = await axios.get(url, { timeout: 10000 });
+      const $ = cheerio.load(data);
+      $("script, style, nav, footer, header").remove();
+      content = $("body").text();
+    }
+
+    content = content.replace(/\s+/g, " ").trim();
     if (content.length > 500000) content = content.substring(0, 500000);
+    if (!content) return res.status(400).json({ error: "No content found on page" });
+
     const { error } = await supabase.from("documents").insert([{
       bot_id: req.params.botId,
       file_name: url,
