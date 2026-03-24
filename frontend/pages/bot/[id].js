@@ -132,9 +132,11 @@ export default function BotPage() {
     }
   };
 
-  const showMsg = (text) => {
+  const [msgType, setMsgType] = useState('success');
+  const showMsg = (text, type = 'success') => {
     setMessage(text);
-    setTimeout(() => setMessage(''), 3000);
+    setMsgType(type);
+    setTimeout(() => setMessage(''), 4000);
   };
 
   // --- Bot Settings ---
@@ -146,7 +148,7 @@ export default function BotPage() {
       setBot(data.bot);
       showMsg('Settings saved!');
     } catch (err) {
-      showMsg('Error saving settings');
+      showMsg('Error saving settings', 'error');
     } finally {
       setSaving(false);
     }
@@ -156,7 +158,7 @@ export default function BotPage() {
   const uploadPdf = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { showMsg('File too large. Max 10MB.'); return; }
+    if (file.size > 10 * 1024 * 1024) { showMsg('File too large. Max 10MB.', 'error'); return; }
     setUploading(true);
     try {
       const formData = new FormData();
@@ -168,7 +170,7 @@ export default function BotPage() {
       fetchDocs();
       fetchStats();
     } catch (err) {
-      showMsg(err.response?.data?.error || 'Error uploading PDF');
+      showMsg(err.response?.data?.error || 'Error uploading PDF', 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -186,7 +188,7 @@ export default function BotPage() {
       fetchDocs();
       fetchStats();
     } catch (err) {
-      showMsg('Error adding text');
+      showMsg('Error adding text', 'error');
     } finally {
       setUploading(false);
     }
@@ -203,7 +205,7 @@ export default function BotPage() {
       fetchDocs();
       fetchStats();
     } catch (err) {
-      showMsg('Error scraping URL');
+      showMsg('Error scraping URL', 'error');
     } finally {
       setUploading(false);
     }
@@ -279,7 +281,7 @@ export default function BotPage() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Status message */}
-        {message && <div className="bg-green-500/10 border border-green-500/20 text-green-400 rounded-lg p-3 mb-6 text-sm">{message}</div>}
+        {message && <div className={`${msgType === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-green-500/10 border-green-500/20 text-green-400'} border rounded-lg p-3 mb-6 text-sm`}>{message}</div>}
 
         {/* Stats row */}
         <div className="grid grid-cols-4 gap-4 mb-6">
