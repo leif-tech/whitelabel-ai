@@ -1,12 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-// Lazy-load pdf-parse (uses DOMMatrix which isn't available in all serverless runtimes)
-let pdfParse;
-const getPdfParse = () => {
-  if (!pdfParse) pdfParse = require("pdf-parse");
-  return pdfParse;
-};
+const pdfParse = require("pdf-parse-new");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const fs = require("fs");
@@ -52,7 +47,7 @@ router.post("/:botId/upload", auth, verifyBotOwnership, (req, res, next) => {
     const supabase = getSupabase();
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const dataBuffer = fs.readFileSync(req.file.path);
-    const pdfData = await getPdfParse()(dataBuffer);
+    const pdfData = await pdfParse(dataBuffer);
     fs.unlinkSync(req.file.path);
     const { error } = await supabase.from("documents").insert([{
       bot_id: req.params.botId,
