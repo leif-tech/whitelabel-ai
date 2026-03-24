@@ -49,7 +49,7 @@ Use ONLY the following knowledge base to answer questions. If the answer is not 
 KNOWLEDGE BASE:
 ${knowledge}
 
-Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}.`,
+Be friendly, concise, and helpful. Always stay in character as ${bot.bot_name}. Always reply in the same language the user is speaking. If they write in Bisaya, Tagalog, or any other language, respond in that language.`,
       messages
     });
 
