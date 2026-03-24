@@ -9,7 +9,6 @@ const getPdfParse = () => {
 };
 const axios = require("axios");
 const cheerio = require("cheerio");
-const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const auth = require("../middleware/auth");
@@ -86,7 +85,7 @@ router.post("/:botId/text", auth, verifyBotOwnership, async (req, res) => {
   }
 });
 
-// Scrape URL (Puppeteer for JS-rendered pages, Cheerio fallback)
+// Scrape URL — extracts both visible text and inline JS data (e.g. product arrays)
 router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
   try {
     const supabase = getSupabase();
@@ -94,34 +93,46 @@ router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
     if (!url) return res.status(400).json({ error: "URL required" });
     if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "URL must start with http:// or https://" });
 
-    let content = "";
+    const { data: html } = await axios.get(url, { timeout: 15000 });
+    const $ = cheerio.load(html);
 
-    try {
-      // Try Puppeteer first (handles JS-rendered SPAs)
-      const browser = await puppeteer.launch({
-        headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
-      });
-      const page = await browser.newPage();
-      await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
-      // Wait a bit for dynamic content to load
-      await new Promise(r => setTimeout(r, 2000));
-      content = await page.evaluate(() => {
-        document.querySelectorAll("script, style, nav, footer, header").forEach(el => el.remove());
-        return document.body.innerText;
-      });
-      await browser.close();
-    } catch (puppeteerErr) {
-      console.log("Puppeteer failed, falling back to Cheerio:", puppeteerErr.message);
-      // Fallback to Cheerio for simple static pages
-      const { data } = await axios.get(url, { timeout: 10000 });
-      const $ = cheerio.load(data);
-      $("script, style, nav, footer, header").remove();
-      content = $("body").text();
-    }
+    // Extract structured data from inline scripts (product arrays, JSON-LD, etc.)
+    let scriptData = "";
+    $("script").each((_, el) => {
+      const code = $(el).html() || "";
+      // Look for product/data arrays in inline scripts
+      const arrayMatches = code.match(/(?:const|let|var)\s+\w+\s*=\s*\[[\s\S]*?\];/g);
+      if (arrayMatches) {
+        for (const match of arrayMatches) {
+          // Extract name/price/cat fields from JS object arrays
+          const items = [];
+          const itemRegex = /\{[^}]*name\s*:\s*"([^"]*)"[^}]*price\s*:\s*([\d.]+)[^}]*\}/g;
+          let m;
+          while ((m = itemRegex.exec(match)) !== null) {
+            const catMatch = match.substring(m.index, m.index + m[0].length).match(/cat\s*:\s*"([^"]*)"/);
+            const labelMatch = match.substring(m.index, m.index + m[0].length).match(/label\s*:\s*"([^"]*)"/);
+            const category = labelMatch ? labelMatch[1] : (catMatch ? catMatch[1] : "");
+            items.push(`${category}: ${m[1]} - ₱${Number(m[2]).toLocaleString()}`);
+          }
+          if (items.length > 0) {
+            scriptData += "\n\nPRODUCT CATALOG:\n" + items.join("\n");
+          }
+        }
+      }
+      // Extract JSON-LD structured data
+      if (code.includes('"@type"')) {
+        try {
+          const jsonLd = JSON.parse(code);
+          scriptData += "\n\nStructured Data: " + JSON.stringify(jsonLd);
+        } catch {}
+      }
+    });
 
-    content = content.replace(/\s+/g, " ").trim();
+    // Get visible text content
+    $("script, style").remove();
+    let textContent = $("body").text().replace(/\s+/g, " ").trim();
+
+    let content = textContent + scriptData;
     if (content.length > 500000) content = content.substring(0, 500000);
     if (!content) return res.status(400).json({ error: "No content found on page" });
 
