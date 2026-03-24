@@ -450,7 +450,7 @@ export default function BotPage() {
                       ) : (
                         threadMessages.map((msg, i) => (
                           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`rounded-lg px-3 py-2 text-sm max-w-[80%] ${msg.role === 'user' ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                            <div className={`rounded-lg px-3 py-2 text-sm max-w-[80%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-blue-600' : 'bg-gray-700'}`}>
                               {msg.message}
                               <div className="text-[10px] opacity-50 mt-1">{new Date(msg.created_at).toLocaleTimeString()}</div>
                             </div>

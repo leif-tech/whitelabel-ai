@@ -135,7 +135,9 @@
   function addMessage(text, type) {
     const msg = document.createElement('div');
     msg.className = `wlai-msg ${type}`;
-    msg.textContent = text;
+    // Escape HTML then convert newlines to <br> for proper formatting
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    msg.innerHTML = escaped.replace(/\n/g, '<br>');
     messages.appendChild(msg);
     messages.scrollTop = messages.scrollHeight;
   }
