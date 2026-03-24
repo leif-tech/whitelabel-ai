@@ -132,10 +132,31 @@
     document.getElementById('wlai-header-name').textContent = 'Assistant';
   });
 
+  // Format bot responses — ensure product lists have proper line breaks
+  function formatText(text) {
+    // Strip markdown bold/italic
+    text = text.replace(/\*\*/g, '');
+    // If already well-formatted with line breaks, return as-is
+    if ((text.match(/\n\s*\n/g) || []).length >= 3) return text;
+    // Count price patterns (₱ or P followed by digits)
+    var prices = text.match(/[₱P]\d[\d,]+/g) || [];
+    if (prices.length < 3) return text;
+    // Common words that follow prices in normal sentences (NOT product names)
+    var skip = /^(pwede|para|sa|ang|ug|og|kay|kung|pero|lang|ra|na|da|ba|man|pud|pod|sad|hangtod|gikan|each|per|for|and|or|the|is|are|to|in|of|with|from|up|but|not|so|if|at|by|as|on|naa|wala|dili|mao|kini|namo|nila|available|only|also|nga|tag|matag|every|all|this|that|our|your|its|we|you|they|it|has|have|can|will|may|just|more|less|about|around|between|both|which|what|when|how|free|total|price|worth|below|above|under|over|most|best|good|great|cheap|affordable|starting|ranging|range|priced|costs|cost|inclusive|plus|minus|off|discount|kana|kini|mura|pila|diri|dire|adto|didto|ari|ani|ato|imo|imu|among|ilang|tanan|gamay|dako|bag-o|daan|unsa|asa|kanus-a|ngano|pila|kinsa|ako|iya|kami|kita|sila|siya|ikaw)$/i;
+    // After a price, add line break before next product/brand name
+    text = text.replace(/([₱P]\d[\d,]+[.,:;]?)\s+(\S+)/g, function(match, price, next) {
+      if (skip.test(next)) return match;
+      return price + '\n\n' + next;
+    });
+    return text;
+  }
+
   function addMessage(text, type) {
     const msg = document.createElement('div');
     msg.className = `wlai-msg ${type}`;
-    // Escape HTML then convert newlines to <br> for proper formatting
+    // Format bot messages for readability
+    if (type === 'bot') text = formatText(text);
+    // Escape HTML then convert newlines to <br>
     const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     msg.innerHTML = escaped.replace(/\n/g, '<br>');
     messages.appendChild(msg);
