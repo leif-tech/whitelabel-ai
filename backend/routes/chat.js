@@ -64,7 +64,7 @@ router.post("/:botId", async (req, res) => {
     messages.push({ role: "user", content: message });
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 1024,
       system: `You are ${bot.bot_name}, a helpful AI assistant for ${bot.client_name}.
 
@@ -84,24 +84,24 @@ CRITICAL FORMATTING RULES — YOU MUST FOLLOW THESE EXACTLY:
 5. Keep each item to 1-2 lines (name + price on separate lines, or name and price on same line).
 6. Separate different categories or sections with a blank line and a simple label.
 
-CORRECT example:
+CORRECT example (placeholders — use actual items from the KNOWLEDGE BASE, never these names):
 
-Naa mi available nga DDR4 RAM:
+Here are the options available:
 
-Kingston Fury Beast 8GB DDR4 3200MHz
-P1,590
+[Item Name 1]
+[Price 1]
 
-OCPC XT II 8GB DDR4 3200MHz
-P1,550
+[Item Name 2]
+[Price 2]
 
-TeamGroup Elite+ 8GB DDR4 3200MHz
-P1,335
+[Item Name 3]
+[Price 3]
 
 WRONG example (NEVER do this — this is unreadable):
-Kingston Fury Beast 8GB DDR4 3200MHz - P1,590 - OCPC XT II 8GB DDR4 3200MHz - P1,550 - TeamGroup Elite+ 8GB - P1,335
+[Item 1] - [Price 1] - [Item 2] - [Price 2] - [Item 3] - [Price 3]
 
 ALSO WRONG (no wall of text):
-We have Kingston Fury Beast 8GB DDR4 3200MHz for P1,590, OCPC XT II 8GB DDR4 3200MHz for P1,550, TeamGroup Elite+ 8GB DDR4 3200MHz for P1,335, and more.
+We have [Item 1] for [Price 1], [Item 2] for [Price 2], [Item 3] for [Price 3], and more.
 
 Remember: readability is the top priority. Use blank lines generously to separate items.`,
       messages
