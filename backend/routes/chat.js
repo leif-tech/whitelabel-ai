@@ -56,7 +56,8 @@ router.post("/:botId", async (req, res) => {
     if (botError || !bot) return res.status(404).json({ error: "Bot not found" });
 
     const { data: docs } = await supabase.from("documents").select("content").eq("bot_id", botId);
-    const knowledge = docs?.map(d => d.content).join("\n\n") || "No documents uploaded yet.";
+    let knowledge = docs?.map(d => d.content).join("\n\n") || "No documents uploaded yet.";
+    if (knowledge.length > 100000) knowledge = knowledge.substring(0, 100000) + "\n\n[Content truncated due to size]";
 
     const { data: history } = await supabase.from("conversations").select("role, message").eq("bot_id", botId).eq("session_id", session_id || "default").order("created_at", { ascending: true }).limit(10);
 
@@ -64,7 +65,7 @@ router.post("/:botId", async (req, res) => {
     messages.push({ role: "user", content: message });
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514",
       max_tokens: 1024,
       system: `You are ${bot.bot_name}, a helpful AI assistant for ${bot.client_name}.
 

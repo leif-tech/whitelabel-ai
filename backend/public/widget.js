@@ -3,12 +3,17 @@
   const apiUrl = document.currentScript.getAttribute('data-api-url') || 'https://whitelabel-ai-production.up.railway.app';
   if (!botId) return;
 
-  const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-  let leadCaptured = false;
+  const sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + Math.random().toString(36).substr(2, 9);
+  let sending = false;
+
+  // Load font via link element (more reliable than @import in dynamic styles)
+  const fontLink = document.createElement('link');
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+  document.head.appendChild(fontLink);
 
   const style = document.createElement('style');
   style.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     #wlai-bubble { position: fixed; bottom: 28px; right: 28px; width: 60px; height: 60px; border-radius: 50%; background: #0066cc; border: none; cursor: pointer; box-shadow: 0 4px 24px rgba(0,0,0,0.25), 0 0 0 0 rgba(0,102,204,0.4); z-index: 99999; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); animation: wlai-pulse 3s infinite; }
     #wlai-bubble:hover { transform: scale(1.1); box-shadow: 0 6px 32px rgba(0,0,0,0.35); }
@@ -254,7 +259,12 @@
 
   async function sendMessage() {
     const text = input.value.trim();
-    if (!text) return;
+    if (!text || sending) return;
+    if (text.length > 2000) {
+      addMessage('Message too long. Please keep it under 2000 characters.', 'bot');
+      return;
+    }
+    sending = true;
     input.value = '';
     addMessage(text, 'user');
     showTyping();
@@ -264,12 +274,15 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, session_id: sessionId })
       });
+      if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
       hideTyping();
       addMessage(data.reply, 'bot');
     } catch {
       hideTyping();
       addMessage('Sorry, something went wrong. Please try again.', 'bot');
+    } finally {
+      sending = false;
     }
   }
 

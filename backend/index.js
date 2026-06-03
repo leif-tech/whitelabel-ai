@@ -5,6 +5,15 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Validate required env vars at startup
+const required = ['JWT_SECRET', 'ANTHROPIC_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+for (const key of required) {
+  if (!process.env[key]) {
+    console.error(`FATAL: ${key} environment variable is not set`);
+    process.exit(1);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -31,7 +40,7 @@ app.use(cors({
 }));
 
 // Body parsing
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiters
@@ -59,14 +68,28 @@ app.get('/', (req, res) => {
   });
 });
 
+// Rate limiter for document operations (scraping, uploads)
+const docLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: "Too many requests. Please wait a moment." }
+});
+
+// Rate limiter for public lead submission
+const leadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  message: { error: "Too many requests. Please wait a moment." }
+});
+
 // Routes
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/bots', require('./routes/bots'));
 app.use('/api/chat', chatLimiter, require('./routes/chat'));
-app.use('/api/documents', require('./routes/documents'));
+app.use('/api/documents', docLimiter, require('./routes/documents'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/conversations', require('./routes/conversations'));
-app.use('/api/leads', require('./routes/leads'));
+app.use('/api/leads', leadLimiter, require('./routes/leads'));
 
 // Global error handler
 app.use((err, req, res, next) => {

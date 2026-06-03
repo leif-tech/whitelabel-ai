@@ -19,7 +19,8 @@ router.post("/register", [
   try {
     const supabase = getSupabase();
     const { email, password, agency_name } = req.body;
-    const { data: existing } = await supabase.from("agencies").select("id").eq("email", email).single();
+    const { data: existing, error: lookupErr } = await supabase.from("agencies").select("id").eq("email", email).maybeSingle();
+    if (lookupErr) throw lookupErr;
     if (existing) return res.status(400).json({ error: "Email already registered" });
     const password_hash = await bcrypt.hash(password, 10);
     const { data: agency, error } = await supabase.from("agencies").insert([{ email, password_hash, agency_name }]).select().single();

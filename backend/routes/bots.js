@@ -63,7 +63,12 @@ router.put("/:id", auth, [
   try {
     const supabase = getSupabase();
     const { bot_name, client_name, greeting_message, primary_color, is_active } = req.body;
-    const update = { bot_name, client_name, greeting_message, primary_color, is_active };
+    const update = {};
+    if (bot_name !== undefined) update.bot_name = bot_name;
+    if (client_name !== undefined) update.client_name = client_name;
+    if (greeting_message !== undefined) update.greeting_message = greeting_message;
+    if (primary_color !== undefined) update.primary_color = primary_color;
+    if (is_active !== undefined) update.is_active = is_active;
     const { data: bot, error } = await supabase.from("bots").update(update).eq("id", req.params.id).eq("agency_id", req.agency.id).select().single();
     if (error) throw error;
     res.json({ message: "Bot updated", bot });

@@ -91,7 +91,19 @@ router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
     if (!url) return res.status(400).json({ error: "URL required" });
     if (!/^https?:\/\//i.test(url)) return res.status(400).json({ error: "URL must start with http:// or https://" });
 
-    const { data: html } = await axios.get(url, { timeout: 15000 });
+    // Block SSRF: prevent scraping internal/private IPs
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254', '[::1]', '::1'];
+      if (blockedHosts.includes(hostname) || /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(hostname)) {
+        return res.status(400).json({ error: "Cannot scrape internal URLs" });
+      }
+    } catch {
+      return res.status(400).json({ error: "Invalid URL" });
+    }
+
+    const { data: html } = await axios.get(url, { timeout: 15000, maxContentLength: 5 * 1024 * 1024, maxRedirects: 3 });
     const $ = cheerio.load(html);
 
     // Extract structured data from inline scripts (product arrays, JSON-LD, etc.)

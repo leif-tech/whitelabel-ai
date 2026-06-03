@@ -4,6 +4,16 @@ import axios from 'axios';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
+// Redirect to login on expired/invalid token
+axios.interceptors.response.use(res => res, err => {
+  if (err.response?.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('agency');
+    window.location.href = '/';
+  }
+  return Promise.reject(err);
+});
+
 export default function BotPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -284,7 +294,7 @@ export default function BotPage() {
         {message && <div className={`${msgType === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-green-500/10 border-green-500/20 text-green-400'} border rounded-lg p-3 mb-6 text-sm`}>{message}</div>}
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
             <div className="text-2xl font-bold">{stats.total_messages}</div>
             <div className="text-gray-400 text-sm mt-1">Messages</div>

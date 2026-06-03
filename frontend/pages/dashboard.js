@@ -82,7 +82,8 @@ export default function Dashboard() {
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('agency');
     router.push('/');
   };
 
