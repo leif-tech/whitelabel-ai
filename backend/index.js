@@ -21,11 +21,12 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // Serve widget.js BEFORE Helmet so it's not blocked by CORP/CSP on client sites
-app.use('/widget.js', (req, res, next) => {
+app.get('/widget.js', (req, res) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  next();
-}, express.static(path.join(__dirname, 'public'), { index: false }));
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'public', 'widget.js'));
+});
 
 // Security
 app.use(helmet({
