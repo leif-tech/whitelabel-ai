@@ -30,6 +30,7 @@ export default function BotPage() {
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [expandedDoc, setExpandedDoc] = useState(null);
 
   // Bot settings form
   const [settings, setSettings] = useState({});
@@ -401,11 +402,24 @@ export default function BotPage() {
                 {docs.length > 0 && (
                   <div className="mt-4">
                     <div className="text-gray-400 text-xs mb-2">Learned Documents ({docs.length})</div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
                       {docs.map(doc => (
-                        <div key={doc.id} className="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-2">
-                          <span className="text-sm text-gray-300 truncate">{doc.file_name}</span>
-                          <button onClick={() => deleteDoc(doc.id)} className="text-red-400 hover:text-red-300 text-xs ml-2">Delete</button>
+                        <div key={doc.id} className="bg-gray-800 rounded-lg overflow-hidden">
+                          <div className="flex items-center justify-between px-3 py-2">
+                            <button onClick={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)} className="flex items-center gap-2 text-sm text-gray-300 truncate text-left flex-1 min-w-0 hover:text-white transition-colors">
+                              <span className="text-gray-500 text-xs flex-shrink-0">{expandedDoc === doc.id ? '▼' : '▶'}</span>
+                              <span className="truncate">{doc.file_name}</span>
+                              {doc.char_count > 0 && <span className="text-gray-500 text-xs flex-shrink-0">({(doc.char_count / 1000).toFixed(1)}k chars)</span>}
+                            </button>
+                            <button onClick={() => { if (window.confirm(`Unlearn "${doc.file_name}"? The bot will no longer have this knowledge.`)) deleteDoc(doc.id); }} className="text-red-400 hover:text-red-300 text-xs ml-2 px-2 py-1 rounded hover:bg-red-500/10 transition-all flex-shrink-0">Unlearn</button>
+                          </div>
+                          {expandedDoc === doc.id && (
+                            <div className="px-3 pb-3">
+                              <div className="bg-gray-900 rounded-lg p-3 max-h-48 overflow-y-auto">
+                                <pre className="text-xs text-gray-400 whitespace-pre-wrap break-words font-mono leading-relaxed">{doc.content || doc.preview || 'No content'}</pre>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

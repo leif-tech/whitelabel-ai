@@ -159,13 +159,22 @@ router.post("/:botId/url", auth, verifyBotOwnership, async (req, res) => {
   }
 });
 
-// Get all documents for a bot
+// Get all documents for a bot (with content preview)
 router.get("/:botId", auth, verifyBotOwnership, async (req, res) => {
   try {
     const supabase = getSupabase();
-    const { data: docs, error } = await supabase.from("documents").select("id, file_name, created_at").eq("bot_id", req.params.botId);
+    const { data: docs, error } = await supabase.from("documents").select("id, file_name, content, created_at").eq("bot_id", req.params.botId);
     if (error) throw error;
-    res.json({ documents: docs });
+    // Include character count and a preview
+    const documents = docs.map(d => ({
+      id: d.id,
+      file_name: d.file_name,
+      char_count: d.content?.length || 0,
+      preview: d.content?.substring(0, 200) || '',
+      content: d.content || '',
+      created_at: d.created_at
+    }));
+    res.json({ documents });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
