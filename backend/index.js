@@ -11,8 +11,17 @@ const PORT = process.env.PORT || 3001;
 // Trust proxy (Railway runs behind a reverse proxy)
 app.set('trust proxy', 1);
 
+// Serve widget.js BEFORE Helmet so it's not blocked by CORP/CSP on client sites
+app.use('/widget.js', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(__dirname, 'public'), { index: false }));
+
 // Security
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
 // CORS — allow any origin so the embeddable widget works on client sites
 // Auth-protected endpoints are secured by JWT, not CORS
@@ -38,7 +47,7 @@ const authLimiter = rateLimit({
   message: { error: "Too many attempts. Please try again later." }
 });
 
-// Serve widget.js and other static files
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check
